@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Explorations</title><description>An explorations with Swift and other tech</description><link>https://bljubisic.github.io</link><language>en</language><lastBuildDate>Sat, 18 Mar 2023 19:09:45 +0100</lastBuildDate><pubDate>Sat, 18 Mar 2023 19:09:45 +0100</pubDate><ttl>250</ttl><atom:link href="https://bljubisic.github.io/feed.rss" rel="self" type="application/rss+xml"/><item><guid isPermaLink="true">https://bljubisic.github.io/posts/Ionic%20React%20and%20Auth0%20%E2%80%94%20Config</guid><title>Ionic React and Auth0 — Config</title><description>Ionic React and Auth0 — Config.</description><link>https://bljubisic.github.io/posts/Ionic%20React%20and%20Auth0%20%E2%80%94%20Config</link><pubDate>Sat, 18 Mar 2023 19:04:00 +0100</pubDate><content:encoded><![CDATA[<h1>Ionic React and Auth0 — Config</h1><h3>What is Auth0</h3><p>I came across Auth0 in my current position as Frontend developer as a cool way to have all available social login possibilities as well as old fashioned email/password login, and all of that without anything on your FE or BE side. These possibilities are great if you are just exploring what your customers would like to see as a Login options.Integration with existing FE and BE is seamless and they provide you with good documentation for all major platforms. Why then I am writing this then? Well, we had very exotic setup on our side, at least on Frontend side. We are using combination of Ionic and React and all of that using capacitor. But more on that later.</p><h3>Client Setup</h3><p>As said we are using Ionic + React and all that without cordova and with capacitor instead. This Capacitor thing does not pose a problem because you can still use Cordova plugins within it. This thing is that documentation for Ionic on Auth0 is available only for Angular and this created a bit of a issue within our team. But, after careful investigation (try and error phase) we concluded that you can use all of the Angular plugins with some of the React tweaks.</p><h3>Auth0 Configuration</h3><p>When you signup for Auth0 a new application will be created for you, or you can do the same at any time. Once you do that you will get all application details for your new application. Those details we will use later when we are setting up our login setup. For now make sure you get two things:</p><ul><li>Domain<ul><li>Client ID</li></ul></li></ul><p>First thing you need to configure on your end is callback URL. This will have following format:</p><pre><code># replace <span class="type">YOUR_PACKAGE_ID</span> with your app package <span class="type">ID 
+YOUR_PACKAGE_ID</span>://<span class="type">YOUR_DOMAIN</span>/cordova/<span class="type">YOUR_PACKAGE_ID</span>/callback
+</code></pre><p>Domain you have from your application data and package id is your package id :).</p><p>Now, the next step is always configuring CORS on Auth0, but you can see this already in their documentation for Angular for example. Add at least localhost to your CORS setting within Auth0:</p><pre><code>http://localhost, ionic://localhost, http://localhost:<span class="number">8100</span>
+</code></pre><h3>React Implementation</h3><p>After this you’ll need to add necessary libraries. We are using npm so the command would look like this:</p><pre><code>npm install auth0-js <span class="keyword">@auth0</span>/cordova <span class="keyword">@ionic</span>/storage --save
+</code></pre><p>But I guess that installing using yarn would not be that much different. Next thing to add are cordova plugins, and this would require a bit of tweaking because instead of Cordova we are using Capacitor</p><pre><code>npm install --save <span class="keyword">@ionic</span>-native/safari-view-controller
+npm install --save cordova-plugin-customurlscheme
+</code></pre><p>This <em>cordova-plugin-customurlscheme</em> is responsible for adding custom url scheme in your project but as we are not using Cordova we have to do by ourselves. On iOS you need to go to Xcode and open you project in there, and add in info.plist something like this:</p><pre><code>&lt;dict&gt;
+  &lt;key&gt;<span class="type">CFBundleURLSchemes</span>&lt;/key&gt;
+  &lt;array&gt;
+    &lt;string&gt;<span class="type">YOUR_PACKAGE_ID</span>&lt;/string&gt;
+  &lt;/array&gt;
+&lt;/dict&gt;
+</code></pre><p>Also, you need to enable the app ability to be opened by following URL in AppDelegate.swift:</p><pre><code><span class="keyword">func</span> application(<span class="keyword">_</span> application: <span class="type">UIApplication</span>, continue userActivity: <span class="type">NSUserActivity</span>, restorationHandler: <span class="keyword">@escaping</span> ([<span class="type">UIUserActivityRestoring</span>]?) -&gt; <span class="type">Void</span>) -&gt; <span class="type">Bool</span> {
+  <span class="comment">// Called when the app was launched with an activity, including      Universal Links.
+  // Feel free to add additional processing here, but if you want the App API to support
+  // tracking app url opens, make sure to keep this call</span>
+  <span class="keyword">return</span> <span class="type">CAPBridge</span>.<span class="call">handleContinueActivity</span>(userActivity, restorationHandler)
+}
+</code></pre><p>So, as you can see, not that much work. I am dealing only with iOS here, but Android is not my thing anyway. Now we are getting to the part where we have to create our code in Ionic itself. First of all we need to create a React component that will handle the URL redirects. We did this by adding AppUrlListener:</p><pre><code><span class="keyword">import</span> React, { useEffect } from 'react';
+<span class="keyword">import</span> { <span class="type">Plugins</span> } from '<span class="keyword">@capacitor</span>/core';
+<span class="call">const</span> { <span class="type">App</span>: <span class="type">CapApp</span> } = <span class="type">Plugins</span>;
+<span class="comment">// eslint-disable-next-line @typescript-eslint/no-var-requires</span>
+const <span class="type">Auth0Cordova</span> = <span class="call">require</span>('<span class="keyword">@auth0</span>/cordova');
+
+const <span class="type">AppUrlListener</span>: <span class="type">React</span>.<span class="type">FC</span>&lt;any&gt; = () =&gt; {
+  <span class="call">useEffect</span>(() =&gt; {
+    <span class="type">CapApp</span>.<span class="call">addListener</span>('appUrlOpen', (data: any) =&gt; {
+      <span class="type">Auth0Cordova</span>.<span class="call">onRedirectUri</span>(data.<span class="property">url</span>);
+    });
+  });
+  <span class="keyword">return</span> null;
+};
+</code></pre><p>This will enable you app to continue the login process once your callback URL is called by Auth0. AppUrlListener must be invoked in App.tsx as a standalone tag. After this you need to add Auth0 configuration variables:</p><pre><code>export const <span class="type">AUTH_CONFIG</span> = {
+  <span class="comment">// Needed for Auth0 (capitalization: ID):</span>
+  clientID: '<span class="type">YOUR_CLIENT_ID</span>',
+  <span class="comment">// Needed for Auth0Cordova (capitalization: Id):</span>
+  clientId: '<span class="type">YOUR_CLIENT_ID</span>',
+  domain: '<span class="type">YOUR_DOMAIN</span>',
+  packageIdentifier: '<span class="type">YOUR_PACKAGE_ID</span>' <span class="comment">// config.xml widget ID, e.g., com.auth0.ionic</span>
+};
+</code></pre><p>Now you are ready to add your Login service, or component. We are using this React way, so once the page is loaded it will directly redirect to Auth0 Login page and start login process. This way customers have one less item to click and the Login process is seamless.</p><pre><code>const <span class="type">Auth0Cordova</span> = <span class="call">require</span>('<span class="keyword">@auth0</span>/cordova');
+
+const <span class="type">Client</span> = new <span class="type">Auth0Cordova</span>(<span class="type">CONFIG</span>.<span class="type">AUTH_CONFIG</span>);
+
+export const <span class="type">SignIn</span>: <span class="type">FC</span>&lt;<span class="type">StepInterface</span>&gt; = ({ currentStep, setNextStep }) =&gt; {
+  const dispatch = <span class="call">useDispatch</span>();
+  
+  <span class="call">useEffect</span>(() =&gt; {
+    const handleExchangeResponse = (res: any, rToken: string) =&gt; {
+      <span class="comment">// YOUR IMPLEMENTATION OF BACKEND</span>
+    };
+
+    const loginWithAuth0 = () =&gt; {
+      const options = {
+        scope: 'openid profile offline_access',
+      };
+
+      <span class="type">Client</span>.<span class="call">authorize</span>(options, (err: any, authResult: any) =&gt; {
+        <span class="keyword">if</span> (err) {
+          <span class="comment">// todo show error</span>
+          <span class="keyword">return</span> <span class="call">handleSocialLoginError</span>('auth0', err);
+        }
+
+        const body = {
+          <span class="comment">// BACKEND CONFIGURATION</span>
+        };
+
+        <span class="comment">// BACKEND CALL</span>
+      });
+    };
+
+    <span class="call">loginWithAuth0</span>();
+  }, [dispatch]);
+  
+    <span class="keyword">return</span> (
+    &lt;<span class="type">IonPage</span>&gt;
+      {showError ? (
+        &lt;<span class="type">ErrorMessage</span>&gt;<span class="type">Something</span> went wrong&lt;/<span class="type">ErrorMessage</span>&gt;
+      ) : (
+        &lt;<span class="type">IonLoading</span> isOpen={<span class="keyword">true</span>} message={'<span class="type">Un Momento</span>...'} /&gt;
+      )}
+    &lt;/<span class="type">IonPage</span>&gt;
+  );
+};
+</code></pre><p>I have omitted some of the implementation specifics but even without this it is clear how is this used in React component. We are using useEffect to run this when the page is loaded. And this is all that is to have Auth0 running on React. As said it is rather easy to have it implemented this way. The only thing missing is sign out but this is even easier:</p><pre><code><span class="keyword">import</span> { <span class="type">SafariViewController</span> } from '<span class="keyword">@ionic</span>-native/safari-view-controller';
+
+export const signUserOut = (): <span class="type">AppThunk</span> =&gt; (dispatch) =&gt; {
+  <span class="type">SafariViewController</span>.<span class="call">isAvailable</span>()
+    .<span class="call">then</span>((available: boolean) =&gt; {
+      const domain = <span class="type">CONFIG</span>.<span class="type">AUTH_CONFIG</span>.<span class="property">domain</span>;
+      const clientId = <span class="type">CONFIG</span>.<span class="type">AUTH_CONFIG</span>.<span class="property">clientId</span>;
+      const pkgId = <span class="type">CONFIG</span>.<span class="type">AUTH_CONFIG</span>.<span class="property">packageIdentifier</span>;
+      const url = `https://${domain}/v2/logout?client_id=${clientId}&amp;returnTo=${pkgId}://${domain}/cordova/${pkgId}/callback`;
+      <span class="keyword">if</span> (available) {
+        <span class="type">SafariViewController</span>.<span class="call">show</span>({ url }).<span class="call">subscribe</span>((result: any) =&gt; {
+          <span class="keyword">if</span> (result.<span class="property">event</span> === 'loaded') {
+            <span class="type">SafariViewController</span>.<span class="call">hide</span>();
+            <span class="call">const</span> { signOut } = signinSlice.<span class="property">actions</span>;
+            localStorage.<span class="call">removeItem</span>('token');
+            localStorage.<span class="call">removeItem</span>('user');
+            localStorage.<span class="call">removeItem</span>('rToken');
+            client.<span class="call">clearStore</span>();
+            <span class="call">dispatch</span>(<span class="call">signOut</span>());
+          }
+        });
+      }
+    })
+    .<span class="call">catch</span>((err) =&gt; {
+      console.<span class="call">log</span>(err);
+    });
+};
+</code></pre>]]></content:encoded></item><item><guid isPermaLink="true">https://bljubisic.github.io/posts/QuickToDo%20CoreData%20+%20Rx%20+%20MVVM%20(Part%202)</guid><title>QuickToDo CoreData + Rx + MVVM (Part 2)</title><description>QuickToDo RxSwift and MVVM.</description><link>https://bljubisic.github.io/posts/QuickToDo%20CoreData%20+%20Rx%20+%20MVVM%20(Part%202)</link><pubDate>Sat, 18 Mar 2023 15:25:00 +0100</pubDate><content:encoded><![CDATA[<h1>QuickToDo CoreData + Rx + MVVM (Part 2)</h1><h2>Rx + MVVM</h2><p>As written in first part, general architecture for this sample app is MVVM with RxSwift in Model and ViewModel layer. Communication between View and ViewModel is done in more traditional way, but that will be explained later. This way app is build in more simple way and is easily maintained. View section is kept at its minimal, and does not contain any logic to it. All logic stuff is in ViewModel and Model layers. Model layer is seen as a compact layer from ViewModel, and it only has one entry point to it. All specific modules, like Core Data or Cloud Kit are kept invisible for ViewModel or View. Internal communication within Model is also built around Rx. Because of that, in Storage Protocol you can see that it’s output is this:</p><pre><code><span class="keyword">protocol</span> QuickToDoStorageOutputs {
+    <span class="keyword">var</span> items: <span class="type">Observable</span>&lt;<span class="type">Item</span>&gt; { <span class="keyword">get</span> }
+}
+</code></pre><p>That observable is implemented as PublishSubject in CoreDataModel.swift.</p><pre><code><span class="keyword">private var</span> itemsPrivate: <span class="type">PublishSubject</span>&lt;<span class="type">Item</span>&gt;
+
+<span class="keyword">var</span> items: <span class="type">Observable</span>&lt;<span class="type">Item</span>&gt; {
+    <span class="keyword">return</span> itemsPrivate.<span class="call">subscribeOn</span>(<span class="type">ConcurrentDispatchQueueScheduler</span>(qos: .<span class="dotAccess">background</span>))
+}
+</code></pre><p>As you can see this observable will be subscribed on background thread. Within getItems() function, found Items are pumped into this observable:</p><pre><code><span class="keyword">for</span> itemMO <span class="keyword">in</span> fetchedItems {
+    <span class="keyword">let</span> tmpItem: <span class="type">Item</span> = <span class="type">Item</span>(id: <span class="type">UUID</span>(uuidString: itemMO.<span class="property">id</span>)!,
+                             name: itemMO.<span class="property">word</span>,
+                             count: itemMO.<span class="property">count</span>,
+                             uploadedToICloud: itemMO.<span class="property">uploadedToICloud</span>,
+                             done: itemMO.<span class="property">completed</span>,
+                             shown: itemMO.<span class="property">used</span>,
+                             createdAt: itemMO.<span class="property">lastused</span>,
+                             lastUsedAt: itemMO.<span class="property">lastused</span>)
+    itemsPrivate.<span class="call">onNext</span>(tmpItem)
+}
+</code></pre><p>ViewModel is effectively subscribed to this observable on Main thread, and with each new Item received it will add that item as new entry in Items array. This array is actually consumed by View and it is displayed as a TableView:</p><pre><code><span class="keyword">self</span>.<span class="property">model</span>.<span class="property">outputs</span>.<span class="property">items</span>
+    .<span class="call">observe</span>(on: <span class="type">MainScheduler</span>.<span class="property">instance</span>)
+    .<span class="call">filter</span>({ (item) -&gt; <span class="type">Bool</span> <span class="keyword">in
+        return</span> item.<span class="property">name</span> != <span class="string">""</span>
+    })
+    .<span class="call">subscribe</span>(onNext: { (newItem) <span class="keyword">in
+        if</span> !<span class="keyword">self</span>.<span class="property">itemsArray</span>.<span class="call">contains</span>(where: { (item) -&gt; <span class="type">Bool</span> <span class="keyword">in</span>
+            item.<span class="property">id</span> == newItem.<span class="property">id</span>
+        }) {
+            <span class="keyword">self</span>.<span class="property">itemsArray</span>.<span class="call">append</span>(newItem)
+            <span class="type">DispatchQueue</span>.<span class="property">main</span>.<span class="call">async</span> {
+                <span class="call">completionBlock</span>()
+            }
+            
+        } <span class="keyword">else</span> {
+            <span class="keyword">if let</span> index = <span class="keyword">self</span>.<span class="property">itemsArray</span>.<span class="call">firstIndex</span>(where: { (item) -&gt; <span class="type">Bool</span> <span class="keyword">in</span>
+                item.<span class="property">id</span> == newItem.<span class="property">id</span>
+            }) {
+                <span class="keyword">let</span> item = <span class="keyword">self</span>.<span class="property">itemsArray</span>[index]
+                <span class="keyword">if</span> (item.<span class="property">lastUsedAt</span> &lt; newItem.<span class="property">lastUsedAt</span>) {
+                    <span class="keyword">self</span>.<span class="property">itemsArray</span>[index] = newItem
+                }
+            }
+        }
+    }, onError: { (<span class="type">Error</span>) <span class="keyword">in</span>
+        <span class="call">print</span>(<span class="type">Error</span>)
+    }, onDisposed:  {
+    }).<span class="call">disposed</span>(by: disposeBag)
+</code></pre><p>CompletionBlock in this case is nothing more than TableView reload so that new items can be seen on View. With all of this we now have perfectly workable example of to do list app, but I wanted to add a little complication to it, so it would not be that simple. I thought that it would be nice to have simple hints when you try to enter new items, maybe from the database of already used items. We already have in place what we need in the database schema, so now we just need to implement this. We will start from Model, getHints method returns <code>Observable&lt;String&gt;</code>:</p><pre><code><span class="keyword">return</span> <span class="type">Observable</span>.<span class="call">create</span>({ (observer) -&gt; <span class="type">Disposable</span> <span class="keyword">in
+    self</span>.<span class="property">coreData</span>.<span class="property">inputs</span>.<span class="call">getHints</span>(for: itemName) { (firstItem, secondItem) <span class="keyword">in</span>
+        observer.<span class="call">onNext</span>(firstItem.<span class="property">name</span>)
+        observer.<span class="call">onNext</span>(secondItem.<span class="property">name</span>)
+        observer.<span class="call">onCompleted</span>()
+    }
+    <span class="keyword">return</span> <span class="type">Disposables</span>.<span class="call">create</span>()
+})
+.<span class="call">subscribe</span>(on: <span class="type">ConcurrentDispatchQueueScheduler</span>(qos: .<span class="dotAccess">background</span>))
+.<span class="call">observe</span>(on: <span class="type">MainScheduler</span>.<span class="property">instance</span>)
+</code></pre><p>This Observable is subscribed on background thread but observed on main thread. That means that it will try to run in background thread (which is a rule when dealing with CoreData or network access, eg. CloudKit), but it will return values on main thread which is needed as we will display those values on UI.</p>]]></content:encoded></item><item><guid isPermaLink="true">https://bljubisic.github.io/posts/QuickToDo%20CoreData%20+%20Rx%20+%20MVVM</guid><title>QuickToDo CoreData + Rx + MVVM</title><description>QuickToDo Core Data explained.</description><link>https://bljubisic.github.io/posts/QuickToDo%20CoreData%20+%20Rx%20+%20MVVM</link><pubDate>Sat, 18 Mar 2023 15:20:00 +0100</pubDate><content:encoded><![CDATA[<h1>QuickToDo CoreData + Rx + MVVM</h1><h2>Part 1: Core Data</h2><p>I have already started writing about new version of the QuickToDo app but, with all things happening in private life, moving to Germany, starting new job and trying to accommodate all of that in the same time, I had not much time left to work on this. Fortunately I have created substantial part of the app already. I will write more about those parts of the application: MVVM and RxSwift integration, including CoreData modifications.</p><p>First of all I have decided to use RxSwift implementation of frp paradigm. With that came the decision to use MVVM as way to organise the code. I will try to explain in details how I use those two paradigms together. But, before all of that I would like to write more about CoreData modifications.</p><p>First of all, there is an understanding that Rx should be used in Model section of app and as such, it is not directly visible in View section. Connection points between Model and View is ModelView which is subscribed to signals coming from Model and translate those to regular output variables consumable by View. Also, there is an understanding that View will never directly converse with Model, the connection should only be through ViewModel.</p><img src="https://bljubisic.github.io/Images/QuickToDoScheme.png" alt="image scheme"/><p>This is very simplified architecture sketch for the app. I will first try to describe the data model for the app. Whole source code can be found here.</p><pre><code><span class="keyword">public struct</span> Item: <span class="type">Codable</span>{
+    <span class="keyword">let</span> name: <span class="type">String</span>
+    <span class="keyword">let</span> count: <span class="type">Int</span>
+    <span class="keyword">let</span> uploadedToICloud: <span class="type">Bool</span>
+    <span class="keyword">let</span> done: <span class="type">Bool</span>
+    <span class="keyword">let</span> shown: <span class="type">Bool</span>
+    <span class="keyword">let</span> createdAt: <span class="type">Date</span>
+}
+
+<span class="keyword">extension</span> <span class="type">Item</span> {
+    <span class="keyword">init</span>() {
+        name = <span class="string">""</span>
+        count = <span class="number">0</span>
+        uploadedToICloud = <span class="keyword">false</span>
+        done = <span class="keyword">false</span>
+        shown = <span class="keyword">false</span>
+        createdAt = <span class="type">Date</span>()
+    }
+}
+</code></pre><p>Item object</p><p>As you can see here, Item is the focal point for QuickToDo app. Extension is added just to keep both initialisers for struct, one with variables and one empty, which will be used to create Item with default values. All properties of the structure are read only, and this was done on purpose, because I am using lenses to do updates to Item, as displayed here:</p><pre><code><span class="keyword">struct</span> Lens&lt;Whole, Part&gt; {
+    <span class="keyword">let</span> get: (<span class="type">Whole</span>) -&gt; <span class="type">Part</span>
+    <span class="keyword">let</span> set: (<span class="type">Part</span>, <span class="type">Whole</span>) -&gt; <span class="type">Whole</span>
+}
+</code></pre><p>Lens definition</p><p>I would like to go into more details of the Core Data part. The most important parts are hidden in ManagedObjectTypeProtocol.swift file within CoreData folder. Here is the code explained:</p><pre><code><span class="keyword">public protocol</span> ManagedObjectType: <span class="keyword">class</span> {
+    <span class="keyword">static var</span> entityName: <span class="type">String</span> { <span class="keyword">get</span> }
+    <span class="keyword">static var</span> defaultSortDescriptors: [<span class="type">NSSortDescriptor</span>] { <span class="keyword">get</span> }
+}
+
+<span class="keyword">extension</span> <span class="type">ManagedObjectType</span> {
+    <span class="keyword">public static var</span> defaultSortDescriptors: [<span class="type">NSSortDescriptor</span>] {
+        <span class="keyword">return</span> []
+    }
+    
+    <span class="keyword">public static var</span> sortedFetchRequest: <span class="type">NSFetchRequest</span>&lt;<span class="type">NSFetchRequestResult</span>&gt; {
+        <span class="keyword">let</span> request = <span class="type">NSFetchRequest</span>&lt;<span class="type">NSFetchRequestResult</span>&gt;(entityName: entityName)
+        request.<span class="property">sortDescriptors</span> = defaultSortDescriptors
+        <span class="keyword">return</span> request
+    }
+}
+
+<span class="keyword">extension</span> <span class="type">ManagedObjectType</span> <span class="keyword">where</span> <span class="type">Self</span>: <span class="type">ManagedObject</span> {
+    <span class="keyword">public static func</span> findOrCreateInContext(moc: <span class="type">NSManagedObjectContext</span>, matchingPredicate predicate:<span class="type">NSPredicate</span>, configure: (<span class="type">Self</span>) -&gt; ()) -&gt; <span class="type">Self</span> {
+        <span class="keyword">guard let</span> obj = <span class="call">findOrFetchInContext</span>(moc: moc, matchingPredicate: predicate) <span class="keyword">else</span> {
+            <span class="keyword">let</span> newObject: <span class="type">Self</span> = moc.<span class="call">insertObject</span>()
+            <span class="call">configure</span>(newObject)
+            <span class="keyword">return</span> newObject
+        }
+        <span class="keyword">return</span> obj
+    }
+    
+    <span class="keyword">public static func</span> findOrFetchInContext(moc: <span class="type">NSManagedObjectContext</span>, matchingPredicate predicate: <span class="type">NSPredicate</span>) -&gt; <span class="type">Self</span>? {
+        <span class="keyword">guard let</span> obj = <span class="call">materializedObjectInContext</span>(moc: moc, matchingPredicate: predicate)
+            <span class="keyword">else</span> {
+                <span class="keyword">return</span> <span class="call">fetchInContext</span>(context: moc) { request <span class="keyword">in</span>
+                    request.<span class="property">predicate</span> = predicate
+                    request.<span class="property">returnsObjectsAsFaults</span> = <span class="keyword">false</span>
+                    request.<span class="property">fetchLimit</span> = <span class="number">1</span>
+                    }.first
+        }
+        <span class="keyword">return</span> obj
+    }
+}
+
+<span class="keyword">extension</span> <span class="type">ManagedObjectType</span> <span class="keyword">where</span> <span class="type">Self</span>: <span class="type">ManagedObject</span> {
+    <span class="keyword">public static func</span> materializedObjectInContext(moc: <span class="type">NSManagedObjectContext</span>, matchingPredicate predicate:<span class="type">NSPredicate</span>) -&gt; <span class="type">Self</span>? {
+        <span class="keyword">for</span> obj <span class="keyword">in</span> moc.<span class="property">registeredObjects</span> <span class="keyword">where</span> !obj.<span class="property">isFault</span> {
+            <span class="keyword">guard let</span> res = obj <span class="keyword">as</span>? <span class="type">Self</span>, predicate.<span class="call">evaluate</span>(with: res)
+                <span class="keyword">else</span> { <span class="keyword">continue</span> }
+            <span class="keyword">return</span> res
+        }
+        <span class="keyword">return nil</span>
+    }
+}
+
+<span class="keyword">extension</span> <span class="type">ManagedObjectType</span> <span class="keyword">where</span> <span class="type">Self</span>: <span class="type">ManagedObject</span> {
+    <span class="keyword">public static func</span> fetchInContext(context: <span class="type">NSManagedObjectContext</span>, configurationBlock: (<span class="type">NSFetchRequest</span>&lt;<span class="type">NSFetchRequestResult</span>&gt;) -&gt; () = {<span class="keyword">_ in</span> }) -&gt; [<span class="type">Self</span>] {
+        <span class="keyword">let</span> request = <span class="type">NSFetchRequest</span>&lt;<span class="type">NSFetchRequestResult</span>&gt;(entityName: <span class="type">Self</span>.<span class="property">entityName</span>)
+        <span class="call">configurationBlock</span>(request)
+        <span class="keyword">guard let</span> result = <span class="keyword">try</span>! context.<span class="call">fetch</span>(request) <span class="keyword">as</span>? [<span class="type">Self</span>]
+            <span class="keyword">else</span> {
+                <span class="call">fatalError</span>(<span class="string">"Fetched object have wrong type"</span>)
+        }
+        <span class="keyword">return</span> result
+    }
+}
+</code></pre><p>Managed Object Type Protocol</p><p>Now, this ManagedObjectType is actually used when defining real Item Managed Object:</p><pre><code><span class="keyword">public final class</span> ItemMO: <span class="type">ManagedObject</span> {
+    
+    <span class="keyword">@NSManaged public private(set) var</span> completed: <span class="type">Bool</span>
+    <span class="keyword">@NSManaged public private(set) var</span> count: <span class="type">Int</span>
+    <span class="keyword">@NSManaged public private(set) var</span> lastused: <span class="type">Date</span>
+    <span class="keyword">@NSManaged public private(set) var</span> used: <span class="type">Bool</span>
+    <span class="keyword">@NSManaged public private(set) var</span> word: <span class="type">String</span>
+    <span class="keyword">@NSManaged public private(set) var</span> uploadedToICloud: <span class="type">Bool</span>
+    
+    <span class="keyword">public static func</span> insertIntoContext(moc: <span class="type">NSManagedObjectContext</span>, item: <span class="type">Item</span>) -&gt; <span class="type">ItemMO</span> {
+        <span class="keyword">let</span> localItemMO: <span class="type">ItemMO</span> = moc.<span class="call">insertObject</span>()
+        localItemMO.<span class="property">completed</span> = item.<span class="property">done</span>
+        localItemMO.<span class="property">count</span> = item.<span class="property">count</span>
+        localItemMO.<span class="property">lastused</span> = <span class="type">Date</span>()
+        localItemMO.<span class="property">used</span> = item.<span class="property">shown</span>
+        localItemMO.<span class="property">word</span> = item.<span class="property">name</span>
+        localItemMO.<span class="property">uploadedToICloud</span> = item.<span class="property">uploadedToICloud</span>
+        <span class="keyword">_</span> = moc.<span class="call">saveOrRollback</span>()
+        <span class="keyword">return</span> localItemMO
+    }
+    
+    <span class="keyword">public static func</span> updateIntoContext(moc: <span class="type">NSManagedObjectContext</span>, item: <span class="type">Item</span>) -&gt; (<span class="type">ItemMO</span>?, <span class="type">Bool</span>) {
+        <span class="keyword">let</span> predicate: <span class="type">NSPredicate</span> = <span class="type">NSPredicate</span>(format: <span class="string">"%K == %@"</span>, <span class="string">"word"</span>, item.<span class="property">name</span>)
+        <span class="keyword">let</span> oldItemMOWrapped: <span class="type">ItemMO</span>? = <span class="type">ItemMO</span>.<span class="call">findOrFetchInContext</span>(moc: moc, matchingPredicate: predicate)
+        <span class="keyword">guard let</span> oldItemMO = oldItemMOWrapped <span class="keyword">else</span> {
+            <span class="keyword">return</span> (<span class="keyword">nil</span>, <span class="keyword">false</span>)
+        }
+        oldItemMO.<span class="property">completed</span> = item.<span class="property">done</span>
+        oldItemMO.<span class="property">count</span> = item.<span class="property">count</span>
+        oldItemMO.<span class="property">lastused</span> = <span class="type">Date</span>()
+        oldItemMO.<span class="property">used</span> = item.<span class="property">shown</span>
+        oldItemMO.<span class="property">word</span> = item.<span class="property">name</span>
+        oldItemMO.<span class="property">uploadedToICloud</span> = item.<span class="property">uploadedToICloud</span>
+        <span class="keyword">let</span> returnValue = moc.<span class="call">saveOrRollback</span>()
+        <span class="call">return</span>(oldItemMO, returnValue)
+    }
+}
+
+<span class="keyword">extension</span> <span class="type">ItemMO</span>: <span class="type">ManagedObjectType</span> {
+    <span class="keyword">public static var</span> entityName: <span class="type">String</span> {
+        <span class="keyword">return</span> <span class="string">"Item"</span>
+    }
+    
+    <span class="keyword">public static var</span> defaultSortDescriptors: [<span class="type">NSSortDescriptor</span>] {
+        <span class="keyword">return</span> [<span class="type">NSSortDescriptor</span>(key: <span class="string">"lastused"</span>, ascending: <span class="keyword">false</span>)]
+    }
+}
+</code></pre><p>You can see that by using ManagedObjectType, you now have fetchInContext and findOrCreateInContext methods. Right now they are simple, but this is the place where you can add caching and all other fancy stuff from Core Data. Using the CoreData like this, you are using typed Entity and not generic Entity created using the String denominator. This change would prompt compiler errors if used incorrectly. Otherwise, if for example entity name is misspelled compiler would not register that error, but it will be present in run time. With all of these changes, it is very straight forward to write CoreDataModel.swift which can be seen in GitHub.</p>]]></content:encoded></item><item><guid isPermaLink="true">https://bljubisic.github.io/posts/first-post</guid><title>My first post</title><description>A description of my first post.</description><link>https://bljubisic.github.io/posts/first-post</link><pubDate>Sat, 28 Jan 2023 18:36:00 +0100</pubDate><content:encoded><![CDATA[<h1>My first post</h1><p>My first post's text.</p>]]></content:encoded></item></channel></rss>
