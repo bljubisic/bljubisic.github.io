@@ -46,7 +46,7 @@
   
     /* Body Small/Grey80 */
     font-family: BISansNEXT;
-    font-size: 14px;
+    font-size: 24px;
     font-style: normal;
     font-weight: 400;
     line-height: 20px; /* 142.857% */
@@ -61,7 +61,7 @@
     text-align: center;
     font-feature-settings: 'case' on;
     font-family: SF Pro Display;
-    font-size: 17px;
+    font-size: 27px;
     font-style: normal;
     font-weight: 600;
     line-height: 22px; /* 129.412% */  
@@ -137,7 +137,7 @@
 
   /* Body Small/Grey80 */
   font-family: BISansNEXT;
-  font-size: 14px;
+  font-size: 30px;
   font-style: normal;
   font-weight: 400;
   line-height: 20px; /* 142.857% */
@@ -160,7 +160,7 @@
 
   /* Button/Button */
   font-family: BISansNEXT;
-  font-size: 16px;
+  font-size: 26px;
   font-style: normal;
   font-weight: 700;
   line-height: 20px; /* 125% */
