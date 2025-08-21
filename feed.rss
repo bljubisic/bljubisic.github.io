@@ -1,4 +1,213 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Explorations</title><description>An explorations with Swift and other tech</description><link>https://bljubisic.github.io</link><language>en</language><lastBuildDate>Thu, 27 Jun 2024 19:34:40 +0200</lastBuildDate><pubDate>Thu, 27 Jun 2024 19:34:40 +0200</pubDate><ttl>250</ttl><atom:link href="https://bljubisic.github.io/feed.rss" rel="self" type="application/rss+xml"/><item><guid isPermaLink="true">https://bljubisic.github.io/posts/survey-md</guid><title>survey-md or How to Make a Survey Out of Markdown</title><description>survey-md or How to Make a Survey Out of Markdown</description><link>https://bljubisic.github.io/posts/survey-md</link><pubDate>Thu, 27 Jun 2024 19:34:00 +0200</pubDate><content:encoded><![CDATA[<h1>survey-md or How to Make a Survey Out of Markdown</h1><p>When challange appeared to either use survey framework or to build our own for a project that we were assign to, for me, it was a perfect opprtunity to try and create a survey tool that would use markdown as a underlying format. I quickly tried to find if there was anything on the market that was using the same principle and could only find this, <a href="https://github.com/Fedia/survapp">surv.app</a>. This was the only thing that resembled what I wanted to have in our survey tool. It had simple Markdown extension that allowed easy way of formulating questions and also, it also included few simple question types, like single choice, multiple choice, open ended and number questions. But it had one big disadvantage, it was a node.js app, so server side, and I wanted a framework that we could add to our already existing app. Ok, so I had a task in my hands, to rewrite server side app to a client based framework.</p><h2>Structure of the framework</h2><p>I used svelte for this as the oringinal app was built on svelte so I could re use most of the parts. The main part is of course md.js which I took with minimal changes and also SurveyNode.svelte, SurveyPrint.svelte and SurveyQuestion.svelte. I made small changes to the original files, just to make them suitable for framework usage. Also, I have added new question type, as that was needed for our project, matrix question. Let me walk you through the structure of the project.</p><p>Main action is done in md.js file, which is responsible for parsing the markdown strings and recognizing where the questions are. In addition to general parser, there are three svelte components that are responsible for markdown rendering on the screen. First two are pretty obvious ones, <code></code><code>SurveyNode.svelte</code><code></code> and <code></code><code>SurveyPrint.svelte</code><code></code> responsible for rendering the pure markdown, like paragraph or regular text with markdown syntax. The third one is the one responsible for rendering the question, <code></code><code>SurveyQuestion.svelte</code><code></code>. This is where all the question types resides. Just recently I have added matrix type of the question, which distributes the answers in a matrix type. This was done by introducing new param called matrix with format:</p><pre><code>?question_name matrix='strongly disagree, disagree, agree, strongly agree'
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Explorations</title><description>An explorations with Swift and other tech</description><link>https://bljubisic.github.io</link><language>en</language><lastBuildDate>Thu, 21 Aug 2025 14:56:50 +0200</lastBuildDate><pubDate>Thu, 21 Aug 2025 14:56:50 +0200</pubDate><ttl>250</ttl><atom:link href="https://bljubisic.github.io/feed.rss" rel="self" type="application/rss+xml"/><item><guid isPermaLink="true">https://bljubisic.github.io/posts/VisionPro%20-%20Develop%20an%20Immersive%20Game</guid><title>Chasing Colors - Developing an Immersive Game</title><description>Chasing Colors - Developing an Immersive Game</description><link>https://bljubisic.github.io/posts/VisionPro%20-%20Develop%20an%20Immersive%20Game</link><pubDate>Thu, 21 Aug 2025 14:51:00 +0200</pubDate><content:encoded><![CDATA[<h1>Chasing Colors - Developing an Immersive Game</h1><p>When the challenge of creating an immersive game for Apple Vision Pro came up, I was excited to explore the possibilities of this new platform. The goal was to create a game that would not only be visually stunning but also engaging and interactive, leveraging the unique capabilities of the Vision Pro. I have already did a SwiftUI update for QuickToDo app, so I was familiar with the platform. The game, titled "Chasing Colors", is a simple yet captivating experience where players chase and collect colored orbs in a vibrant 3D environment. The game is intentionally designed to be simple, focusing on the immersive experience rather than complex mechanics. The main purpose of this app is to showcase the capabilities of the Vision Pro and provide a fun, engaging experience for users. I wanted to try out how to use RealityView and RealityKit to create a 3D environment that players can explore and interact with. Also, I wanted to experiment with Attachments and Anchors to create a more immersive experience.</p><h2>Game Overview</h2><p>First thing that user see is difficulty selection screen, where user can choose between three different difficulties: Easy, Medium, and Hard. Each difficulty level changes the initial number of orbs in the game, with Easy starting with 10 orbs, Medium with 20, and Hard with 30. The game is designed to be played in an unobtrusive environment, allowing players to focus on the immersive experience without distractions. The gameplay is simple: player should 'tap' on the orbs to collect them, selecting only the orbs with specified color. Remaining time is displayed on the attachment screen and the level is completed when all orbs with specified color are collected, or time runs out. There are three major levels within the game, each containing 10 sublevels. In each sublevel, number of orbs is increased by one, and in each major level number of different colors is increased by number specified on selected difficulty level. For example, in Easy mode, first major level has 3 color, second has 6 colors, and third has 9 colors. In Medium mode, first major level has 5 colors, second has 10 colors, and third has 15 colors. In Hard mode, first major level has 9 colors, second has 18 colors, and third has 27 colors. Also, selected difficulty level determines the initial time for each level, time removed as punishment when selecting orb with wrong color and how many orbs will be added with each new level. The game is designed with intention that orbs are never intersecting and that colors be close to each other so that player should focus on finding the wright ones.</p><h2>Development of the Game</h2><p>The game is built using SwiftUI and RealityKit, leveraging the capabilities of Apple Vision Pro. The main components of the game are: - GameView: The main view of the game, where the RealityView is displayed. - InstructionView: A view that provides info attachment view with remaining time and chosen color. - LevelSelectView: A view that allows players to select the difficulty level. - GameCompleteOverlay: An overlay that appears when the game is completed, showing the score and allowing players to restart or go back to the main menu. - GameState: A class that manages the game state, including the current level, score, and remaining time.</p><h3>Display Immersive RealityView together with Windows within Mixed environment</h3><p>For displaying the difficulty selection screen, I use normal 2D window that is displayed right in front of the user. This is done using SwiftUI WindowGroup, which allows us to create a window that can be displayed in the mixed environment. Once the level is selected the GameView is displayed. The code for this looks like this:</p><pre><code>     <span class="keyword">var</span> body: <span class="keyword">some</span> <span class="type">SwiftUI</span>.<span class="type">Scene</span> {
+        <span class="type">WindowGroup</span>(id: <span class="string">"levelSelection"</span>) {
+            <span class="type">LevelSelectView</span>(selectedLevel: <span class="property">$selectedLevel</span>, gameState: <span class="property">$gameState</span>)
+        }.<span class="call">windowStyle</span>(.<span class="dotAccess">automatic</span>)
+        
+        <span class="type">ImmersiveSpace</span>(id: <span class="string">"something"</span>) {
+            <span class="type">GameView</span>(gameState: <span class="property">$gameState</span>)
+        }
+        .<span class="call">immersionStyle</span>(selection: <span class="property">$gameImmersionStyle</span>, in: .<span class="dotAccess">mixed</span>)
+    }
+</code></pre><p>As you can see both WindowGroup and ImmersiveSpace have ids, so we could show them or hide them as needed. This is done using environment variables:</p><pre><code>     <span class="keyword">@Environment</span>(\.<span class="property">openImmersiveSpace</span>) <span class="keyword">var</span> openImmersiveSpace
+    <span class="keyword">@Environment</span>(\.<span class="property">dismissWindow</span>) <span class="keyword">var</span> dismissWindow
+</code></pre><h3>Selecting positions for orbs</h3><p>Once the difficulty level is selected, the GameState will be created and initialyied. This means that we need to create the initial positions for the orbs. This is done using a simple function that generates random positions within a specified range. The positions are stored in an array, which is then used to create the orbs in the RealityView. The code for this looks like this:</p><pre><code>         <span class="keyword">for _ in</span> <span class="number">0</span>..&lt;numberOfSpheres {
+            <span class="keyword">var</span> attempts = <span class="number">0</span>
+            <span class="keyword">var</span> validPosition = <span class="keyword">false
+            var</span> newPosition = <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)
+            
+            <span class="keyword">while</span> !validPosition &amp;&amp; attempts &lt; maxAttempts {
+                <span class="comment">// Generate random position in a hemisphere in front of user
+                // X: left-right spread
+                // Y: up-down spread (slightly biased upward)
+                // Z: forward distance with some variation</span>
+                newPosition = <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(
+                    <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius...spreadRadius), <span class="comment">// Left-right</span>
+                    <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius/<span class="number">2</span>...spreadRadius), <span class="comment">// Slightly up-biased</span>
+                    -baseDistance + <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">0.4</span>...<span class="number">0.4</span>) <span class="comment">// 1m forward ± 20cm</span>
+                )
+                
+                <span class="comment">// Check if this position is far enough from all existing spheres</span>
+                validPosition = <span class="keyword">true
+                for</span> existingPosition <span class="keyword">in</span> positions {
+                    <span class="keyword">let</span> distance = <span class="call">length</span>(newPosition - existingPosition)
+                    <span class="keyword">if</span> distance &lt; minDistance {
+                        validPosition = <span class="keyword">false
+                        break</span>
+                    }
+                }
+                attempts += <span class="number">1</span>
+            }
+            
+            positions.<span class="call">append</span>(newPosition)
+        }
+</code></pre><p>As you can see the positions are generated in a hemisphere in front of the user, with some random variation in the forward distance. This ensures that the orbs are not too close to each other and that they are positioned in a way that is easy for the user to interact with. All of the variables are defined in the GameState class, so they can be easily adjusted.</p><h3>Attachments and Overlays</h3><p>When the game has started, InstructionView is displayed in the front of the user, showing the remaining time and the color that needs to be collected. This is done using SwiftUI's attachment system, which allows us to create a view that is displayed in the mixed reality environment. The code for this looks like this:</p><pre><code>         <span class="type">ZStack</span> {
+            <span class="type">RealityView</span> { content, attachments <span class="keyword">in</span>
+                gameState.<span class="call">setupScene</span>(content: content, attachments: attachments)
+            } update: { content, attachments <span class="keyword">in</span>
+                gameState.<span class="call">updateScene</span>(content: content, attachments: attachments)
+            } attachments: {
+                <span class="type">Attachment</span>(id: <span class="string">"Instructions"</span>) {
+                    <span class="type">InstructionTextView</span>(gameState: gameState)
+                }
+                
+                <span class="type">Attachment</span>(id: <span class="string">"game-complete"</span>) {
+                    <span class="type">GameCompleteOverlay</span>(gameState: gameState)
+                }
+            }
+            .<span class="call">gesture</span>(
+                <span class="type">SpatialTapGesture</span>()
+                    .<span class="call">targetedToAnyEntity</span>()
+                    .<span class="call">onEnded</span> { value <span class="keyword">in
+                        let</span> color = gameState.<span class="call">getColorOfEntity</span>(value.<span class="property">entity</span>)
+                        <span class="call">playBalloonPopSound</span>()
+                        <span class="call">createExplosionEffect</span>(at: value.<span class="property">entity</span>, with: color)
+                        gameState.<span class="call">handleTap</span>(on: value.<span class="property">entity</span>)
+                    }
+            )
+        }
+</code></pre><p>Where attachments will show up is set in the GameState class, in setupScene:</p><pre><code>         <span class="keyword">if let</span> instructions = attachments.<span class="call">entity</span>(for: <span class="string">"Instructions"</span>) {
+            instructions.<span class="property">position</span> = <span class="type">SIMD3</span>(<span class="number">1</span>, <span class="number">1.8</span>, -<span class="number">1</span>)
+
+            content.<span class="call">add</span>(instructions)
+        }
+</code></pre><p>That position is set relative to the initial anchor of the realityView.</p><h3>Anchors</h3><p>The main ancho for the game is set in the GameState class, which is used to position the RealityView in the mixed reality environment. The anchor is created using the <code>AnchorEntity</code> class, which allows us to create an anchor that can be used to position the RealityView. The code for this looks like this:</p><pre><code>         anchorEntity = <span class="type">AnchorEntity</span>(.<span class="dotAccess">head</span>, trackingMode: .<span class="dotAccess">once</span>)
+        content.<span class="call">add</span>(anchorEntity)
+</code></pre><p>AnchorEntity is set to track the user's head, which allows the RealityView to be positioned in front of the user. Anchor is tracked only once, which means that the game objects will not move with the user's head, but will remain in the same position relative to the user's initial position. This is important for the game, as it allows the user to interact with the orbs without having to move their head.</p><h3>Explosion Effect</h3><p>To create an explosion effect when the user taps on an orb, I used a simple particle system that is created in the RealityKit. The particle system is created using the <code>ParticleSystemComponent</code> class, which allows us to create a particle system that can be used to create the explosion effect. The code for this looks like this:</p><pre><code>     <span class="keyword">private func</span> createExplosionEffect(at entity: <span class="type">Entity</span>, with color: <span class="type">UIColor</span>) {
+        
+        <span class="comment">// Create custom particle explosion using multiple small cubes</span>
+        <span class="keyword">let</span> particleCount = <span class="number">50</span>
+        <span class="keyword">let</span> explosionEntity = <span class="type">Entity</span>()
+        explosionEntity.<span class="property">position</span> = entity.<span class="property">position</span>
+        
+        <span class="keyword">for _ in</span> <span class="number">0</span>..&lt;particleCount {
+            <span class="comment">// Create small particle cube</span>
+            <span class="keyword">let</span> particleMesh = <span class="type">MeshResource</span>.<span class="call">generateBox</span>(size: <span class="number">0.01</span>) <span class="comment">// Small particles</span>
+            <span class="keyword">var</span> particleMaterial = <span class="type">SimpleMaterial</span>()
+            particleMaterial.<span class="property">color</span> = .<span class="keyword">init</span>(tint: color) <span class="comment">// Same color as main box</span>
+            particleMaterial.<span class="property">roughness</span> = <span class="number">0.3</span>
+            particleMaterial.<span class="property">metallic</span> = <span class="number">0.7</span>
+            
+            <span class="keyword">let</span> particle = <span class="type">ModelEntity</span>(mesh: particleMesh, materials: [particleMaterial])
+            
+            <span class="comment">// Random direction for explosion</span>
+            <span class="keyword">let</span> randomX = <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">1</span>...<span class="number">1</span>)
+            <span class="keyword">let</span> randomY = <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">0.5</span>...<span class="number">1</span>)
+            <span class="keyword">let</span> randomZ = <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">1</span>...<span class="number">1</span>)
+            <span class="keyword">let</span> direction = <span class="call">normalize</span>(<span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(randomX, randomY, randomZ))
+            
+            <span class="comment">// Random speed</span>
+            <span class="keyword">let</span> speed = <span class="type">Float</span>.<span class="call">random</span>(in: <span class="number">1.5</span>...<span class="number">3.0</span>)
+            <span class="keyword">let</span> velocity = direction * speed
+            
+            <span class="comment">// Set initial position with slight randomness</span>
+            <span class="keyword">let</span> randomOffset = <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(
+                <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">0.05</span>...<span class="number">0.05</span>),
+                <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">0.05</span>...<span class="number">0.05</span>),
+                <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">0.05</span>...<span class="number">0.05</span>)
+            )
+            particle.<span class="property">position</span> = randomOffset
+            
+            explosionEntity.<span class="call">addChild</span>(particle)
+            
+            <span class="comment">// Animate particle movement with physics simulation</span>
+            <span class="call">animateParticle</span>(particle, initialVelocity: velocity, duration: <span class="number">2.0</span>)
+        }
+        
+        <span class="comment">// Add explosion entity to scene</span>
+        entity.<span class="property">parent</span>?.<span class="call">addChild</span>(explosionEntity)
+        <span class="keyword">self</span>.<span class="property">explosionEntity</span> = explosionEntity
+        
+        <span class="comment">// Hide the box temporarily during explosion</span>
+        <span class="call">withAnimation</span>(.<span class="call">easeOut</span>(duration: <span class="number">0.2</span>)) {
+            entity.<span class="property">isEnabled</span> = <span class="keyword">false</span>
+        }
+        
+        <span class="comment">// Clean up particle system after explosion</span>
+        <span class="type">DispatchQueue</span>.<span class="property">main</span>.<span class="call">asyncAfter</span>(deadline: .<span class="call">now</span>() + <span class="number">3.0</span>) {
+            explosionEntity.<span class="call">removeFromParent</span>()
+        }
+    }
+</code></pre><p>As we are dealing with orbs within the game, the particles are created to be small cubes that are randomly positioned around the orb that was tapped. The particles are animated to move in random directions with a random speed, creating an explosion effect. The explosion entity is added to the scene and is removed after a few seconds to clean up the resources. Animation for the particles is done using a simple function that applies a force to the particles, making them move in the specified direction with the specified speed. The code for this looks like this:</p><pre><code>     <span class="keyword">private func</span> animateParticle(<span class="keyword">_</span> particle: <span class="type">ModelEntity</span>, initialVelocity: <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;, duration: <span class="type">Float</span>) {
+        <span class="keyword">let</span> gravity: <span class="type">Float</span> = -<span class="number">2.0</span>
+        <span class="keyword">let</span> dampening: <span class="type">Float</span> = <span class="number">0.95</span>
+        
+        <span class="keyword">var</span> currentVelocity = initialVelocity
+        <span class="keyword">let</span> startTime = <span class="type">CACurrentMediaTime</span>()
+        
+        <span class="comment">// Create a timer for physics simulation</span>
+        <span class="type">Timer</span>.<span class="call">scheduledTimer</span>(withTimeInterval: <span class="number">0.016</span>, repeats: <span class="keyword">true</span>) { timer <span class="keyword">in</span> <span class="comment">// ~60 FPS</span>
+            <span class="keyword">let</span> currentTime = <span class="type">CACurrentMediaTime</span>()
+            <span class="keyword">let</span> elapsedTime = <span class="type">Float</span>(currentTime - startTime)
+            
+            <span class="keyword">if</span> elapsedTime &gt;= duration {
+                timer.<span class="call">invalidate</span>()
+                <span class="comment">// Fade out particle</span>
+                <span class="call">withAnimation</span>(.<span class="call">easeOut</span>(duration: <span class="number">0.5</span>)) {
+                    particle.<span class="property">components</span>[<span class="type">OpacityComponent</span>.<span class="keyword">self</span>] = <span class="type">OpacityComponent</span>(opacity: <span class="number">0.0</span>)
+                }
+                <span class="keyword">return</span>
+            }
+            
+            <span class="comment">// Apply gravity</span>
+            currentVelocity.<span class="property">y</span> += gravity * <span class="number">0.016</span> <span class="comment">// 60 FPS timestep
+            
+            // Apply dampening</span>
+            currentVelocity *= dampening
+            
+            <span class="comment">// Update position</span>
+            particle.<span class="property">position</span> += currentVelocity * <span class="number">0.016</span>
+            
+            <span class="comment">// Add rotation for visual appeal</span>
+            <span class="keyword">let</span> rotationSpeed: <span class="type">Float</span> = <span class="number">2.0</span>
+            <span class="keyword">let</span> currentRotation = particle.<span class="property">transform</span>.<span class="property">rotation</span>
+            <span class="keyword">let</span> additionalRotation = <span class="call">simd_quatf</span>(angle: rotationSpeed * <span class="number">0.016</span>, axis: <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(<span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>))
+            particle.<span class="property">transform</span>.<span class="property">rotation</span> = currentRotation * additionalRotation
+        }
+    }
+</code></pre><h3>Sound Effects</h3><p>There is a sound effect that is played when the user taps on an orb. The sound effect is created using the <code>AVAudioPlayer</code> class, which allows us to play a sound file when the user taps on an orb. The code for this looks like this:</p><pre><code>     <span class="keyword">private func</span> playBalloonPopSound() {
+        <span class="comment">// Generate balloon pop sound programmatically using AVAudioEngine</span>
+        <span class="keyword">let</span> audioEngine = <span class="type">AVAudioEngine</span>()
+        <span class="keyword">let</span> playerNode = <span class="type">AVAudioPlayerNode</span>()
+        <span class="keyword">let</span> audioFormat = <span class="type">AVAudioFormat</span>(standardFormatWithSampleRate: <span class="number">44100</span>, channels: <span class="number">1</span>)!
+        
+        <span class="comment">// Create a short burst of noise to simulate balloon pop</span>
+        <span class="keyword">let</span> frameCount = <span class="type">AVAudioFrameCount</span>(<span class="number">0.2</span> * audioFormat.<span class="property">sampleRate</span>) <span class="comment">// 0.2 seconds</span>
+        <span class="keyword">guard let</span> buffer = <span class="type">AVAudioPCMBuffer</span>(pcmFormat: audioFormat, frameCapacity: frameCount) <span class="keyword">else</span> { <span class="keyword">return</span> }
+        buffer.<span class="property">frameLength</span> = frameCount
+        
+        <span class="comment">// Generate balloon pop sound - quick burst with frequency sweep</span>
+        <span class="keyword">guard let</span> channelData = buffer.<span class="property">floatChannelData</span>?[<span class="number">0</span>] <span class="keyword">else</span> { <span class="keyword">return</span> }
+        
+        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>..&lt;<span class="type">Int</span>(frameCount) {
+            <span class="keyword">let</span> time = <span class="type">Float</span>(i) / <span class="type">Float</span>(audioFormat.<span class="property">sampleRate</span>)
+            <span class="keyword">let</span> envelope = <span class="call">exp</span>(-time * <span class="number">15.0</span>) <span class="comment">// Quick decay envelope</span>
+            <span class="keyword">let</span> frequency = <span class="number">800.0</span> * (<span class="number">1.0</span> - time * <span class="number">2.0</span>) <span class="comment">// Frequency sweep down</span>
+            <span class="keyword">let</span> noise = <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">1</span>...<span class="number">1</span>) * <span class="number">0.3</span> <span class="comment">// Add some noise</span>
+            <span class="keyword">let</span> tone = <span class="call">sin</span>(<span class="number">2.0</span> * <span class="type">Float</span>.<span class="property">pi</span> * frequency * time)
+            channelData[i] = (tone * <span class="number">0.7</span> + noise * <span class="number">0.3</span>) * envelope * <span class="number">0.8</span>
+        }
+        
+        <span class="comment">// Setup and play the sound</span>
+        audioEngine.<span class="call">attach</span>(playerNode)
+        audioEngine.<span class="call">connect</span>(playerNode, to: audioEngine.<span class="property">mainMixerNode</span>, format: audioFormat)
+        
+        <span class="keyword">do</span> {
+            <span class="keyword">try</span> audioEngine.<span class="call">start</span>()
+            playerNode.<span class="call">scheduleBuffer</span>(buffer, at: <span class="keyword">nil</span>)
+            playerNode.<span class="call">play</span>()
+            
+            <span class="comment">// Stop the engine after the sound finishes</span>
+            <span class="type">DispatchQueue</span>.<span class="property">main</span>.<span class="call">asyncAfter</span>(deadline: .<span class="call">now</span>() + <span class="number">0.5</span>) {
+                audioEngine.<span class="call">stop</span>()
+            }
+        } <span class="keyword">catch</span> {
+            <span class="call">print</span>(<span class="string">"Failed to play balloon pop sound:</span> \(error)<span class="string">"</span>)
+        }
+    }
+</code></pre><p>As can been seen, I am not using any pre-recorded sound files, but rather generating the sound programmatically using <code>AVAudioEngine</code>. This allows for more flexibility and control over the sound effects, making them more dynamic and engaging. Probably there is a better way to do this, but I wanted to try out how to generate sound programmatically.</p><h2>Ending the Game</h2><p>When the game is completed, the <code>GameCompleteOverlay</code> is displayed, showing the score and allowing players to restart or go back to the main menu. The overlay is created using SwiftUI's attachment system, which allows us to create a view that is displayed in the mixed reality environment. The code for this looks like this:</p><pre><code>     <span class="type">Attachment</span>(id: <span class="string">"game-complete"</span>) {
+        <span class="type">GameCompleteOverlay</span>(gameState: gameState)
+    }
+</code></pre><p>The overlay is displayed in the front of the user, allowing them to see their score and choose whether to restart the game or go back to the main menu. The score (remaining time) is stored in UserDefaults, allowing players to see their best score for each difficulty level. The game can be restarted by simply tapping on the "Restart" button in the overlay, which will reset the game state and start a new game.</p>]]></content:encoded></item><item><guid isPermaLink="true">https://bljubisic.github.io/posts/survey-md</guid><title>survey-md or How to Make a Survey Out of Markdown</title><description>survey-md or How to Make a Survey Out of Markdown</description><link>https://bljubisic.github.io/posts/survey-md</link><pubDate>Thu, 27 Jun 2024 19:34:00 +0200</pubDate><content:encoded><![CDATA[<h1>survey-md or How to Make a Survey Out of Markdown</h1><p>When challange appeared to either use survey framework or to build our own for a project that we were assign to, for me, it was a perfect opprtunity to try and create a survey tool that would use markdown as a underlying format. I quickly tried to find if there was anything on the market that was using the same principle and could only find this, <a href="https://github.com/Fedia/survapp">surv.app</a>. This was the only thing that resembled what I wanted to have in our survey tool. It had simple Markdown extension that allowed easy way of formulating questions and also, it also included few simple question types, like single choice, multiple choice, open ended and number questions. But it had one big disadvantage, it was a node.js app, so server side, and I wanted a framework that we could add to our already existing app. Ok, so I had a task in my hands, to rewrite server side app to a client based framework.</p><h2>Structure of the framework</h2><p>I used svelte for this as the oringinal app was built on svelte so I could re use most of the parts. The main part is of course md.js which I took with minimal changes and also SurveyNode.svelte, SurveyPrint.svelte and SurveyQuestion.svelte. I made small changes to the original files, just to make them suitable for framework usage. Also, I have added new question type, as that was needed for our project, matrix question. Let me walk you through the structure of the project.</p><p>Main action is done in md.js file, which is responsible for parsing the markdown strings and recognizing where the questions are. In addition to general parser, there are three svelte components that are responsible for markdown rendering on the screen. First two are pretty obvious ones, <code></code><code>SurveyNode.svelte</code><code></code> and <code></code><code>SurveyPrint.svelte</code><code></code> responsible for rendering the pure markdown, like paragraph or regular text with markdown syntax. The third one is the one responsible for rendering the question, <code></code><code>SurveyQuestion.svelte</code><code></code>. This is where all the question types resides. Just recently I have added matrix type of the question, which distributes the answers in a matrix type. This was done by introducing new param called matrix with format:</p><pre><code>?question_name matrix='strongly disagree, disagree, agree, strongly agree'
 </code></pre><p>after which normal options follows.</p><p>Each question response is stored in context which is essential when setting up the question within your app. When ever you call</p><pre><code>&lt;<span class="type">SurveyNode</span>&gt;
 </code></pre><p>you need to add parameters to it:</p><pre><code>&lt;<span class="type">SurveyNode</span> {node} bind:<span class="call">context</span> {next}&gt;
 </code></pre><p>Node here is an actuall parsed markdown string, context is js object which at the initialization has an id and started_at properties, and will contain all of the answers in an object <code></code><code>{[question_name]: value}</code><code></code>. Next is an function which will be called when survey needs to move forward with the questions. It is completely empty at the start, and you need to supply the code for it.</p><h3>Question Ruleset</h3><p>As said earlier, questions are marked with markdown extension:</p><pre><code>?question_name options params=value
