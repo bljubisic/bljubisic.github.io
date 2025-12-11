@@ -1,4 +1,147 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Explorations</title><description>An explorations with Swift and other tech</description><link>https://bljubisic.github.io</link><language>en</language><lastBuildDate>Thu, 21 Aug 2025 14:56:50 +0200</lastBuildDate><pubDate>Thu, 21 Aug 2025 14:56:50 +0200</pubDate><ttl>250</ttl><atom:link href="https://bljubisic.github.io/feed.rss" rel="self" type="application/rss+xml"/><item><guid isPermaLink="true">https://bljubisic.github.io/posts/VisionPro%20-%20Develop%20an%20Immersive%20Game</guid><title>Chasing Colors - Developing an Immersive Game</title><description>Chasing Colors - Developing an Immersive Game</description><link>https://bljubisic.github.io/posts/VisionPro%20-%20Develop%20an%20Immersive%20Game</link><pubDate>Thu, 21 Aug 2025 14:51:00 +0200</pubDate><content:encoded><![CDATA[<h1>Chasing Colors - Developing an Immersive Game</h1><p>When the challenge of creating an immersive game for Apple Vision Pro came up, I was excited to explore the possibilities of this new platform. The goal was to create a game that would not only be visually stunning but also engaging and interactive, leveraging the unique capabilities of the Vision Pro. I have already did a SwiftUI update for QuickToDo app, so I was familiar with the platform. The game, titled "Chasing Colors", is a simple yet captivating experience where players chase and collect colored orbs in a vibrant 3D environment. The game is intentionally designed to be simple, focusing on the immersive experience rather than complex mechanics. The main purpose of this app is to showcase the capabilities of the Vision Pro and provide a fun, engaging experience for users. I wanted to try out how to use RealityView and RealityKit to create a 3D environment that players can explore and interact with. Also, I wanted to experiment with Attachments and Anchors to create a more immersive experience.</p><h2>Game Overview</h2><p>First thing that user see is difficulty selection screen, where user can choose between three different difficulties: Easy, Medium, and Hard. Each difficulty level changes the initial number of orbs in the game, with Easy starting with 10 orbs, Medium with 20, and Hard with 30. The game is designed to be played in an unobtrusive environment, allowing players to focus on the immersive experience without distractions. The gameplay is simple: player should 'tap' on the orbs to collect them, selecting only the orbs with specified color. Remaining time is displayed on the attachment screen and the level is completed when all orbs with specified color are collected, or time runs out. There are three major levels within the game, each containing 10 sublevels. In each sublevel, number of orbs is increased by one, and in each major level number of different colors is increased by number specified on selected difficulty level. For example, in Easy mode, first major level has 3 color, second has 6 colors, and third has 9 colors. In Medium mode, first major level has 5 colors, second has 10 colors, and third has 15 colors. In Hard mode, first major level has 9 colors, second has 18 colors, and third has 27 colors. Also, selected difficulty level determines the initial time for each level, time removed as punishment when selecting orb with wrong color and how many orbs will be added with each new level. The game is designed with intention that orbs are never intersecting and that colors be close to each other so that player should focus on finding the wright ones.</p><h2>Development of the Game</h2><p>The game is built using SwiftUI and RealityKit, leveraging the capabilities of Apple Vision Pro. The main components of the game are: - GameView: The main view of the game, where the RealityView is displayed. - InstructionView: A view that provides info attachment view with remaining time and chosen color. - LevelSelectView: A view that allows players to select the difficulty level. - GameCompleteOverlay: An overlay that appears when the game is completed, showing the score and allowing players to restart or go back to the main menu. - GameState: A class that manages the game state, including the current level, score, and remaining time.</p><h3>Display Immersive RealityView together with Windows within Mixed environment</h3><p>For displaying the difficulty selection screen, I use normal 2D window that is displayed right in front of the user. This is done using SwiftUI WindowGroup, which allows us to create a window that can be displayed in the mixed environment. Once the level is selected the GameView is displayed. The code for this looks like this:</p><pre><code>     <span class="keyword">var</span> body: <span class="keyword">some</span> <span class="type">SwiftUI</span>.<span class="type">Scene</span> {
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Explorations</title><description>An explorations with Swift and other tech</description><link>https://bljubisic.github.io</link><language>en</language><lastBuildDate>Thu, 11 Dec 2025 12:53:35 +0100</lastBuildDate><pubDate>Thu, 11 Dec 2025 12:53:35 +0100</pubDate><ttl>250</ttl><atom:link href="https://bljubisic.github.io/feed.rss" rel="self" type="application/rss+xml"/><item><guid isPermaLink="true">https://bljubisic.github.io/posts/Chasing%20Colors%20%E2%80%94%20Developing%20an%20AR%20Game</guid><title>Chasing Colors — Developing an AR Game</title><description>Chasing Colors — Developing an AR Game</description><link>https://bljubisic.github.io/posts/Chasing%20Colors%20%E2%80%94%20Developing%20an%20AR%20Game</link><pubDate>Thu, 11 Dec 2025 09:28:00 +0100</pubDate><content:encoded><![CDATA[<h1>Chasing Colors — Developing an AR Game</h1><p>After finishing the VisionOS game called Chasing Colors, there was an idea to convert it and enable it to be played on iOS or iPadOS as well. This required usage of ARKit but retaining the game engine from VisionOS game. I wanted to retain as much code as possible and make changes only in the representation module. In order to do this I was using a lot of conditional compilation marks, something like this:</p><pre><code><span class="preprocessing">#if os(visionOS)</span>
+    <span class="keyword">@Environment</span>(\.<span class="property">openImmersiveSpace</span>) <span class="keyword">private var</span> openImmersiveSpace
+    <span class="keyword">@Environment</span>(\.<span class="property">dismissWindow</span>) <span class="keyword">private var</span> dismissWindow
+<span class="preprocessing">#endif</span>
+</code></pre><p>This is just a sample from the LevelSelectView.swift file and states that those environment variables will be only available if the game is compiled for VisionOS. The major change can be seen in the way the game is shown to the user. In the code this looks something like this:</p><pre><code><span class="preprocessing">#if os(visionOS)</span>
+    <span class="type">Task</span> { <span class="keyword">@MainActor in
+        if #available</span>(visionOS <span class="number">1.0</span>, *) {
+            <span class="keyword">_</span> = <span class="keyword">await</span> <span class="call">openImmersiveSpace</span>(id: <span class="string">"something"</span>)
+            <span class="call">dismissWindow</span>()
+        }
+    }
+<span class="preprocessing">#else</span>
+    <span class="comment">// On iOS, push into the game view using NavigationStack</span>
+    navPath.<span class="call">append</span>(level)
+<span class="preprocessing">#endif</span>
+</code></pre><p>As you can see, VisionOS only needs ImmersiveSpace to be opened, and the game is already there. Things get a bit complicated in iOS/iPadOS. I am using NavigationPath which is populated with the correct GameView instance for the selected level:</p><pre><code>.<span class="call">navigationDestination</span>(for: <span class="type">GameLevel</span>.<span class="keyword">self</span>) { level <span class="keyword">in</span>
+<span class="preprocessing">#if canImport(SwiftUI)</span>
+    <span class="comment">// Replace `GameView` with your actual game view if its name differs.
+    // It should accept `gameState` and/or `selectedLevel` as needed.</span>
+    <span class="keyword">if let</span> gameView = <span class="type">_GameViewFactory</span>.<span class="call">makeIfAvailable</span>(level: level, selectedLevel: <span class="property">$selectedLevel</span>, gameState: <span class="property">$gameState</span>) {
+        gameView
+    } <span class="keyword">else</span> {
+        <span class="type">VStack</span>(spacing: <span class="number">16</span>) {
+            <span class="type">Text</span>(<span class="string">"Game View not found"</span>)
+                .<span class="call">font</span>(.<span class="dotAccess">headline</span>)
+            <span class="type">Text</span>(<span class="string">"Selected level:</span> \(<span class="type">String</span>(describing: level).<span class="property">capitalized</span>)<span class="string">"</span>)
+            <span class="type">Text</span>(<span class="string">"Implement a navigation destination to your game view."</span>)
+        }
+        .<span class="call">padding</span>()
+    }
+<span class="preprocessing">#endif</span>
+}
+</code></pre><p>This code is using the _GameViewFactory enum which job is nothing else than returning GameView for the selected level. GameView brings the substantial addition with ARGameView which is used if the code is compiled for iOS/iPadOS. In addition to that, it will also display an overlay for showing necessary information to the player. This looks like this:</p><img src="https://bljubisic.github.io/Images/IMG_0961.PNG.png" alt="AR Game View"/><h1>Functioning AR</h1><p>In order to use AR effectively you need to detect planes where your anchor will reside. In VisionOS it is easier, as the device is on your head, and you always have that as an default anchor. In the AR world, the device cannot be used as an anchor, so you need to detect a plane where you would place the anchor. In my case, I am detecting both horizontal and vertical planes at the begining. ARViewContainer is UIViewRepresentable and within it contains a Coordinator which is ARSessionDelegate. Plane detection is started automatically once the session is created. Within the session, once the anchor is detected the game is placed. Placing the game is dependent on populating the scene which is specifically created for iOS/iPadOS specific code.</p><pre><code><span class="keyword">func</span> populateScene(root: <span class="type">AnchorEntity</span>) {
+    <span class="comment">// Set the anchor entity for iOS/AR mode</span>
+    <span class="keyword">self</span>.<span class="property">anchorEntity</span> = root
+
+    <span class="comment">// Initialize time remaining for this level</span>
+    timeRemaining = selectedLevel.<span class="property">timeRemainingPerLevel</span>
+
+    <span class="comment">// Clear previous state</span>
+    allEntities.<span class="call">forEach</span> { $0.<span class="property">sphere</span>.<span class="call">removeFromParent</span>() }
+    allEntities.<span class="call">removeAll</span>()
+    currentGame.<span class="property">ballModels</span>.<span class="call">removeAll</span>()
+
+    <span class="comment">// Generate colors and positions for AR mode</span>
+    <span class="keyword">let</span> colors = <span class="call">generateRandomColors</span>(selectedLevel: currentLevel)
+    <span class="keyword">let</span> positions = <span class="call">generateNonIntersectingPositions</span>(for: currentLevel.<span class="property">initialObjectsPerLevel</span> + currentSubLevel, isARMode: <span class="keyword">true</span>)
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>..&lt;(positions.<span class="property">count</span>) {
+        <span class="keyword">let</span> color = colors.<span class="call">randomElement</span>() ?? .<span class="dotAccess">white</span>
+        <span class="keyword">let</span> sphere = <span class="call">createSphere</span>(index: i, position: positions[i], useColor: color)
+        <span class="keyword">let</span> uuid = <span class="type">UUID</span>(uuidString: sphere.<span class="property">name</span>) ?? <span class="type">UUID</span>()
+        <span class="keyword">let</span> ballModel = <span class="type">BallModel</span>(id: uuid, position: sphere.<span class="property">position</span>, pickedUp: <span class="keyword">false</span>, color: color, sphere: sphere)
+        currentGame.<span class="property">ballModels</span>.<span class="call">append</span>(ballModel)
+        allEntities.<span class="call">append</span>(ballModel)
+        root.<span class="call">addChild</span>(sphere)
+    }
+
+    <span class="comment">// Choose a target color for text</span>
+    <span class="keyword">let</span> usedColors: [<span class="type">UIColor</span>] = allEntities.<span class="call">reduce</span>([]) { result, ballModel <span class="keyword">in</span>
+        result.<span class="call">contains</span>(ballModel.<span class="property">color</span>) ? result : result + [ballModel.<span class="property">color</span>]
+    }
+    <span class="keyword">if let</span> firstColor = usedColors.<span class="property">first</span> {
+        <span class="call">print</span>(<span class="string">"Setting textColor to:</span> \(firstColor)<span class="string">, on thread:</span> \(<span class="type">Thread</span>.<span class="property">isMainThread</span>)<span class="string">"</span>)
+        <span class="comment">// Set textColor on main thread to trigger willSet observer</span>
+        <span class="type">DispatchQueue</span>.<span class="property">main</span>.<span class="call">async</span> {
+            <span class="keyword">self</span>.<span class="property">textColor</span> = firstColor
+        }
+        currentEntities = allEntities.<span class="call">filter</span> { $0.<span class="property">color</span> == firstColor }
+    }
+
+    <span class="comment">// Start timer for this level</span>
+    <span class="call">startTimer</span>()
+}
+</code></pre><p>As you can see generateRandomColors, generateNonIntersectingPositions and createSphere are methods common for both versions of the game, with added parameter for generateNonIntersectingPositions, isARMode which will determine where the spheres should be positioned, in front of the view point in case isARMode is false or around anchor point if the isARMode true:</p><pre><code>   <span class="keyword">if</span> isARMode {
+      <span class="comment">// AR mode: position spheres close to the anchor point</span>
+      baseDistance = <span class="number">0.0</span> <span class="comment">// At the anchor</span>
+      spreadRadius = <span class="number">0.5</span> <span class="comment">// Larger spread for AR placement (50cm) to prevent intersection</span>
+  } <span class="keyword">else</span> {
+      <span class="comment">// visionOS mode: position spheres in front of user</span>
+      baseDistance = <span class="number">1.0</span> <span class="comment">// 1 meter forward</span>
+      spreadRadius = <span class="number">0.5</span> <span class="comment">// 50cm spread radius around the forward point</span>
+  }
+</code></pre><p>as well as here:</p><pre><code><span class="keyword">if</span> isARMode {
+    <span class="comment">// AR mode: Generate positions close to anchor</span>
+    newPosition = <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(
+        <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius...spreadRadius), <span class="comment">// Left-right</span>
+        <span class="type">Float</span>.<span class="call">random</span>(in: <span class="number">0.05</span>...spreadRadius), <span class="comment">// Above surface</span>
+        <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius...spreadRadius) <span class="comment">// Forward-back</span>
+    )
+} <span class="keyword">else</span> {
+    <span class="comment">// visionOS mode: Generate random position in a hemisphere in front of user</span>
+    newPosition = <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(
+        <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius...spreadRadius), <span class="comment">// Left-right</span>
+        <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius/<span class="number">2</span>...spreadRadius), <span class="comment">// Slightly up-biased</span>
+        -baseDistance + <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">0.4</span>...<span class="number">0.4</span>) <span class="comment">// 1m forward ± 20cm</span>
+    )
+}
+</code></pre><p>The game play is simple, you need to tap on the sphere to pop it and then it is determined was it the correct color or not. The function that does this is here:</p><pre><code><span class="keyword">func</span> handleEntityTap(at location: <span class="type">CGPoint</span>, in arView: <span class="type">ARView</span>) {
+    <span class="comment">// Perform entity hit test</span>
+    <span class="keyword">let</span> results = arView.<span class="call">hitTest</span>(location)
+
+    <span class="keyword">guard let</span> firstResult = results.<span class="property">first</span> <span class="keyword">else</span> { <span class="keyword">return</span> }
+    <span class="keyword">let</span> entity = firstResult.<span class="property">entity</span>
+
+    <span class="comment">// Check if entity has collision component (all game spheres should)</span>
+    <span class="keyword">guard</span> entity.<span class="property">components</span>.<span class="call">has</span>(<span class="type">CollisionComponent</span>.<span class="keyword">self</span>) <span class="keyword">else</span> { <span class="keyword">return</span> }
+
+    <span class="comment">// Check if this is actually a game sphere (not instruction text)</span>
+    <span class="keyword">guard</span> entity.<span class="property">name</span>.<span class="call">contains</span>(<span class="string">"-"</span>) <span class="keyword">else</span> { <span class="keyword">return</span> }
+
+    <span class="comment">// Prevent double-tapping by disabling collision immediately</span>
+    entity.<span class="property">components</span>.<span class="call">remove</span>(<span class="type">CollisionComponent</span>.<span class="keyword">self</span>)
+
+    <span class="comment">// Get color before handling tap</span>
+    <span class="keyword">let</span> color = gameState.<span class="call">getColorOfEntity</span>(entity)
+
+    <span class="comment">// Play sound</span>
+    <span class="call">playBalloonPopSound</span>()
+
+    <span class="comment">// Create explosion effect at current position</span>
+    <span class="call">createExplosionEffect</span>(at: entity, with: color, in: arView)
+
+    <span class="comment">// Temporarily store entity reference and remove it from parent to prevent GameState from finding it</span>
+    <span class="keyword">let</span> entityParent = entity.<span class="property">parent</span>
+    <span class="keyword">let</span> entityPosition = entity.<span class="property">position</span>
+    entity.<span class="call">removeFromParent</span>()
+
+    <span class="comment">// Re-add entity to parent so we can animate it</span>
+    entityParent?.<span class="call">addChild</span>(entity)
+    entity.<span class="property">position</span> = entityPosition
+
+    <span class="comment">// Update game state logic (score, level progression) but entity is already removed from GameState's tracking</span>
+    <span class="call">updateGameStateLogic</span>(for: entity)
+
+    <span class="comment">// Animate the sphere shrinking and then remove it manually</span>
+    <span class="call">animateSphereDissapear</span>(entity: entity) { [<span class="keyword">weak self</span>] <span class="keyword">in</span>
+        <span class="type">DispatchQueue</span>.<span class="property">main</span>.<span class="call">async</span> {
+            <span class="comment">// Manually remove the entity after animation</span>
+            entity.<span class="call">removeFromParent</span>()
+        }
+    }
+}
+</code></pre><p>Of course there could be further optimization of code usage and more of the code from the original version of the game could be used within the AR game, but that is something for future versions of the game. As it is now, this represents a solid base for several other games that I have in my queue, like scrabble type of game also for AR and VisionOS, customized for different languages.</p>]]></content:encoded></item><item><guid isPermaLink="true">https://bljubisic.github.io/posts/VisionPro%20-%20Develop%20an%20Immersive%20Game</guid><title>Chasing Colors - Developing an Immersive Game</title><description>Chasing Colors - Developing an Immersive Game</description><link>https://bljubisic.github.io/posts/VisionPro%20-%20Develop%20an%20Immersive%20Game</link><pubDate>Thu, 21 Aug 2025 14:51:00 +0200</pubDate><content:encoded><![CDATA[<h1>Chasing Colors - Developing an Immersive Game</h1><p>When the challenge of creating an immersive game for Apple Vision Pro came up, I was excited to explore the possibilities of this new platform. The goal was to create a game that would not only be visually stunning but also engaging and interactive, leveraging the unique capabilities of the Vision Pro. I have already did a SwiftUI update for QuickToDo app, so I was familiar with the platform. The game, titled "Chasing Colors", is a simple yet captivating experience where players chase and collect colored orbs in a vibrant 3D environment. The game is intentionally designed to be simple, focusing on the immersive experience rather than complex mechanics. The main purpose of this app is to showcase the capabilities of the Vision Pro and provide a fun, engaging experience for users. I wanted to try out how to use RealityView and RealityKit to create a 3D environment that players can explore and interact with. Also, I wanted to experiment with Attachments and Anchors to create a more immersive experience.</p><h2>Game Overview</h2><p>First thing that user see is difficulty selection screen, where user can choose between three different difficulties: Easy, Medium, and Hard. Each difficulty level changes the initial number of orbs in the game, with Easy starting with 10 orbs, Medium with 20, and Hard with 30. The game is designed to be played in an unobtrusive environment, allowing players to focus on the immersive experience without distractions. The gameplay is simple: the player should 'tap' on the orbs to collect them, selecting only the orbs with the specified color. Remaining time is displayed on the attachment screen and the level is completed when all orbs with specified color are collected, or time runs out. There are three major levels within the game, each containing 10 sublevels. In each sublevel, number of orbs is increased by one, and in each major level number of different colors is increased by number specified on selected difficulty level. For example, in Easy mode, first major level has 3 color, second has 6 colors, and third has 9 colors. In Medium mode, first major level has 5 colors, second has 10 colors, and third has 15 colors. In Hard mode, first major level has 9 colors, second has 18 colors, and third has 27 colors. Also, selected difficulty level determines the initial time for each level, time removed as punishment when selecting orb with wrong color and how many orbs will be added with each new level. The game is designed with intention that orbs are never intersecting and that colors be close to each other so that player should focus on finding the wright ones.</p><h2>Development of the Game</h2><p>The game is built using SwiftUI and RealityKit, leveraging the capabilities of Apple Vision Pro. The main components of the game are: - GameView: The main view of the game, where the RealityView is displayed. - InstructionView: A view that provides info attachment view with remaining time and chosen color. - LevelSelectView: A view that allows players to select the difficulty level. - GameCompleteOverlay: An overlay that appears when the game is completed, showing the score and allowing players to restart or go back to the main menu. - GameState: A class that manages the game state, including the current level, score, and remaining time.</p><h3>Display Immersive RealityView together with Windows within Mixed environment</h3><p>For displaying the difficulty selection screen, I use normal 2D window that is displayed right in front of the user. This is done using SwiftUI WindowGroup, which allows us to create a window that can be displayed in the mixed environment. Once the level is selected the GameView is displayed. The code for this looks like this:</p><pre><code>     <span class="keyword">var</span> body: <span class="keyword">some</span> <span class="type">SwiftUI</span>.<span class="type">Scene</span> {
         <span class="type">WindowGroup</span>(id: <span class="string">"levelSelection"</span>) {
             <span class="type">LevelSelectView</span>(selectedLevel: <span class="property">$selectedLevel</span>, gameState: <span class="property">$gameState</span>)
         }.<span class="call">windowStyle</span>(.<span class="dotAccess">automatic</span>)
@@ -10,7 +153,7 @@
     }
 </code></pre><p>As you can see both WindowGroup and ImmersiveSpace have ids, so we could show them or hide them as needed. This is done using environment variables:</p><pre><code>     <span class="keyword">@Environment</span>(\.<span class="property">openImmersiveSpace</span>) <span class="keyword">var</span> openImmersiveSpace
     <span class="keyword">@Environment</span>(\.<span class="property">dismissWindow</span>) <span class="keyword">var</span> dismissWindow
-</code></pre><h3>Selecting positions for orbs</h3><p>Once the difficulty level is selected, the GameState will be created and initialyied. This means that we need to create the initial positions for the orbs. This is done using a simple function that generates random positions within a specified range. The positions are stored in an array, which is then used to create the orbs in the RealityView. The code for this looks like this:</p><pre><code>         <span class="keyword">for _ in</span> <span class="number">0</span>..&lt;numberOfSpheres {
+</code></pre><h3>Selecting positions for orbs</h3><p>Once the difficulty level is selected, the GameState will be created and initialized. This means that we need to create the initial positions for the orbs. This is done using a simple function that generates random positions within a specified range. The positions are stored in an array, which is then used to create the orbs in the RealityView. The code for this looks like this:</p><pre><code>         <span class="keyword">for _ in</span> <span class="number">0</span>..&lt;numberOfSpheres {
             <span class="keyword">var</span> attempts = <span class="number">0</span>
             <span class="keyword">var</span> validPosition = <span class="keyword">false
             var</span> newPosition = <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)

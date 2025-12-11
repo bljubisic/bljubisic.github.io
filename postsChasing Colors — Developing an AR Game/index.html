@@ -1,0 +1,144 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="og:site_name" content="Explorations"/><link rel="canonical" href="https://bljubisic.github.io/posts/Chasing%20Colors%20%E2%80%94%20Developing%20an%20AR%20Game"/><meta name="twitter:url" content="https://bljubisic.github.io/posts/Chasing%20Colors%20%E2%80%94%20Developing%20an%20AR%20Game"/><meta name="og:url" content="https://bljubisic.github.io/posts/Chasing%20Colors%20%E2%80%94%20Developing%20an%20AR%20Game"/><title>Chasing Colors — Developing an AR Game | Explorations</title><meta name="twitter:title" content="Chasing Colors — Developing an AR Game | Explorations"/><meta name="og:title" content="Chasing Colors — Developing an AR Game | Explorations"/><meta name="description" content="Chasing Colors — Developing an AR Game"/><meta name="twitter:description" content="Chasing Colors — Developing an AR Game"/><meta name="og:description" content="Chasing Colors — Developing an AR Game"/><meta name="twitter:card" content="summary"/><link rel="stylesheet" href="/styles.css" type="text/css"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><link rel="shortcut icon" href="/images/favicon.png" type="image/png"/><link rel="alternate" href="/feed.rss" type="application/rss+xml" title="Subscribe to Explorations"/></head><body class="item-page"><header><div class="wrapper"><a href="/" class="site-name">Explorations</a></div></header><div class="wrapper"><article><div class="content"><h1>Chasing Colors — Developing an AR Game</h1><p>After finishing the VisionOS game called Chasing Colors, there was an idea to convert it and enable it to be played on iOS or iPadOS as well. This required usage of ARKit but retaining the game engine from VisionOS game. I wanted to retain as much code as possible and make changes only in the representation module. In order to do this I was using a lot of conditional compilation marks, something like this:</p><pre><code><span class="preprocessing">#if os(visionOS)</span>
+    <span class="keyword">@Environment</span>(\.<span class="property">openImmersiveSpace</span>) <span class="keyword">private var</span> openImmersiveSpace
+    <span class="keyword">@Environment</span>(\.<span class="property">dismissWindow</span>) <span class="keyword">private var</span> dismissWindow
+<span class="preprocessing">#endif</span>
+</code></pre><p>This is just a sample from the LevelSelectView.swift file and states that those environment variables will be only available if the game is compiled for VisionOS. The major change can be seen in the way the game is shown to the user. In the code this looks something like this:</p><pre><code><span class="preprocessing">#if os(visionOS)</span>
+    <span class="type">Task</span> { <span class="keyword">@MainActor in
+        if #available</span>(visionOS <span class="number">1.0</span>, *) {
+            <span class="keyword">_</span> = <span class="keyword">await</span> <span class="call">openImmersiveSpace</span>(id: <span class="string">"something"</span>)
+            <span class="call">dismissWindow</span>()
+        }
+    }
+<span class="preprocessing">#else</span>
+    <span class="comment">// On iOS, push into the game view using NavigationStack</span>
+    navPath.<span class="call">append</span>(level)
+<span class="preprocessing">#endif</span>
+</code></pre><p>As you can see, VisionOS only needs ImmersiveSpace to be opened, and the game is already there. Things get a bit complicated in iOS/iPadOS. I am using NavigationPath which is populated with the correct GameView instance for the selected level:</p><pre><code>.<span class="call">navigationDestination</span>(for: <span class="type">GameLevel</span>.<span class="keyword">self</span>) { level <span class="keyword">in</span>
+<span class="preprocessing">#if canImport(SwiftUI)</span>
+    <span class="comment">// Replace `GameView` with your actual game view if its name differs.
+    // It should accept `gameState` and/or `selectedLevel` as needed.</span>
+    <span class="keyword">if let</span> gameView = <span class="type">_GameViewFactory</span>.<span class="call">makeIfAvailable</span>(level: level, selectedLevel: <span class="property">$selectedLevel</span>, gameState: <span class="property">$gameState</span>) {
+        gameView
+    } <span class="keyword">else</span> {
+        <span class="type">VStack</span>(spacing: <span class="number">16</span>) {
+            <span class="type">Text</span>(<span class="string">"Game View not found"</span>)
+                .<span class="call">font</span>(.<span class="dotAccess">headline</span>)
+            <span class="type">Text</span>(<span class="string">"Selected level:</span> \(<span class="type">String</span>(describing: level).<span class="property">capitalized</span>)<span class="string">"</span>)
+            <span class="type">Text</span>(<span class="string">"Implement a navigation destination to your game view."</span>)
+        }
+        .<span class="call">padding</span>()
+    }
+<span class="preprocessing">#endif</span>
+}
+</code></pre><p>This code is using the _GameViewFactory enum which job is nothing else than returning GameView for the selected level. GameView brings the substantial addition with ARGameView which is used if the code is compiled for iOS/iPadOS. In addition to that, it will also display an overlay for showing necessary information to the player. This looks like this:</p><img src="/Images/IMG_0961.PNG.png" alt="AR Game View"/><h1>Functioning AR</h1><p>In order to use AR effectively you need to detect planes where your anchor will reside. In VisionOS it is easier, as the device is on your head, and you always have that as an default anchor. In the AR world, the device cannot be used as an anchor, so you need to detect a plane where you would place the anchor. In my case, I am detecting both horizontal and vertical planes at the begining. ARViewContainer is UIViewRepresentable and within it contains a Coordinator which is ARSessionDelegate. Plane detection is started automatically once the session is created. Within the session, once the anchor is detected the game is placed. Placing the game is dependent on populating the scene which is specifically created for iOS/iPadOS specific code.</p><pre><code><span class="keyword">func</span> populateScene(root: <span class="type">AnchorEntity</span>) {
+    <span class="comment">// Set the anchor entity for iOS/AR mode</span>
+    <span class="keyword">self</span>.<span class="property">anchorEntity</span> = root
+
+    <span class="comment">// Initialize time remaining for this level</span>
+    timeRemaining = selectedLevel.<span class="property">timeRemainingPerLevel</span>
+
+    <span class="comment">// Clear previous state</span>
+    allEntities.<span class="call">forEach</span> { $0.<span class="property">sphere</span>.<span class="call">removeFromParent</span>() }
+    allEntities.<span class="call">removeAll</span>()
+    currentGame.<span class="property">ballModels</span>.<span class="call">removeAll</span>()
+
+    <span class="comment">// Generate colors and positions for AR mode</span>
+    <span class="keyword">let</span> colors = <span class="call">generateRandomColors</span>(selectedLevel: currentLevel)
+    <span class="keyword">let</span> positions = <span class="call">generateNonIntersectingPositions</span>(for: currentLevel.<span class="property">initialObjectsPerLevel</span> + currentSubLevel, isARMode: <span class="keyword">true</span>)
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>..&lt;(positions.<span class="property">count</span>) {
+        <span class="keyword">let</span> color = colors.<span class="call">randomElement</span>() ?? .<span class="dotAccess">white</span>
+        <span class="keyword">let</span> sphere = <span class="call">createSphere</span>(index: i, position: positions[i], useColor: color)
+        <span class="keyword">let</span> uuid = <span class="type">UUID</span>(uuidString: sphere.<span class="property">name</span>) ?? <span class="type">UUID</span>()
+        <span class="keyword">let</span> ballModel = <span class="type">BallModel</span>(id: uuid, position: sphere.<span class="property">position</span>, pickedUp: <span class="keyword">false</span>, color: color, sphere: sphere)
+        currentGame.<span class="property">ballModels</span>.<span class="call">append</span>(ballModel)
+        allEntities.<span class="call">append</span>(ballModel)
+        root.<span class="call">addChild</span>(sphere)
+    }
+
+    <span class="comment">// Choose a target color for text</span>
+    <span class="keyword">let</span> usedColors: [<span class="type">UIColor</span>] = allEntities.<span class="call">reduce</span>([]) { result, ballModel <span class="keyword">in</span>
+        result.<span class="call">contains</span>(ballModel.<span class="property">color</span>) ? result : result + [ballModel.<span class="property">color</span>]
+    }
+    <span class="keyword">if let</span> firstColor = usedColors.<span class="property">first</span> {
+        <span class="call">print</span>(<span class="string">"Setting textColor to:</span> \(firstColor)<span class="string">, on thread:</span> \(<span class="type">Thread</span>.<span class="property">isMainThread</span>)<span class="string">"</span>)
+        <span class="comment">// Set textColor on main thread to trigger willSet observer</span>
+        <span class="type">DispatchQueue</span>.<span class="property">main</span>.<span class="call">async</span> {
+            <span class="keyword">self</span>.<span class="property">textColor</span> = firstColor
+        }
+        currentEntities = allEntities.<span class="call">filter</span> { $0.<span class="property">color</span> == firstColor }
+    }
+
+    <span class="comment">// Start timer for this level</span>
+    <span class="call">startTimer</span>()
+}
+</code></pre><p>As you can see generateRandomColors, generateNonIntersectingPositions and createSphere are methods common for both versions of the game, with added parameter for generateNonIntersectingPositions, isARMode which will determine where the spheres should be positioned, in front of the view point in case isARMode is false or around anchor point if the isARMode true:</p><pre><code>   <span class="keyword">if</span> isARMode {
+      <span class="comment">// AR mode: position spheres close to the anchor point</span>
+      baseDistance = <span class="number">0.0</span> <span class="comment">// At the anchor</span>
+      spreadRadius = <span class="number">0.5</span> <span class="comment">// Larger spread for AR placement (50cm) to prevent intersection</span>
+  } <span class="keyword">else</span> {
+      <span class="comment">// visionOS mode: position spheres in front of user</span>
+      baseDistance = <span class="number">1.0</span> <span class="comment">// 1 meter forward</span>
+      spreadRadius = <span class="number">0.5</span> <span class="comment">// 50cm spread radius around the forward point</span>
+  }
+</code></pre><p>as well as here:</p><pre><code><span class="keyword">if</span> isARMode {
+    <span class="comment">// AR mode: Generate positions close to anchor</span>
+    newPosition = <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(
+        <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius...spreadRadius), <span class="comment">// Left-right</span>
+        <span class="type">Float</span>.<span class="call">random</span>(in: <span class="number">0.05</span>...spreadRadius), <span class="comment">// Above surface</span>
+        <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius...spreadRadius) <span class="comment">// Forward-back</span>
+    )
+} <span class="keyword">else</span> {
+    <span class="comment">// visionOS mode: Generate random position in a hemisphere in front of user</span>
+    newPosition = <span class="type">SIMD3</span>&lt;<span class="type">Float</span>&gt;(
+        <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius...spreadRadius), <span class="comment">// Left-right</span>
+        <span class="type">Float</span>.<span class="call">random</span>(in: -spreadRadius/<span class="number">2</span>...spreadRadius), <span class="comment">// Slightly up-biased</span>
+        -baseDistance + <span class="type">Float</span>.<span class="call">random</span>(in: -<span class="number">0.4</span>...<span class="number">0.4</span>) <span class="comment">// 1m forward ± 20cm</span>
+    )
+}
+</code></pre><p>The game play is simple, you need to tap on the sphere to pop it and then it is determined was it the correct color or not. The function that does this is here:</p><pre><code><span class="keyword">func</span> handleEntityTap(at location: <span class="type">CGPoint</span>, in arView: <span class="type">ARView</span>) {
+    <span class="comment">// Perform entity hit test</span>
+    <span class="keyword">let</span> results = arView.<span class="call">hitTest</span>(location)
+
+    <span class="keyword">guard let</span> firstResult = results.<span class="property">first</span> <span class="keyword">else</span> { <span class="keyword">return</span> }
+    <span class="keyword">let</span> entity = firstResult.<span class="property">entity</span>
+
+    <span class="comment">// Check if entity has collision component (all game spheres should)</span>
+    <span class="keyword">guard</span> entity.<span class="property">components</span>.<span class="call">has</span>(<span class="type">CollisionComponent</span>.<span class="keyword">self</span>) <span class="keyword">else</span> { <span class="keyword">return</span> }
+
+    <span class="comment">// Check if this is actually a game sphere (not instruction text)</span>
+    <span class="keyword">guard</span> entity.<span class="property">name</span>.<span class="call">contains</span>(<span class="string">"-"</span>) <span class="keyword">else</span> { <span class="keyword">return</span> }
+
+    <span class="comment">// Prevent double-tapping by disabling collision immediately</span>
+    entity.<span class="property">components</span>.<span class="call">remove</span>(<span class="type">CollisionComponent</span>.<span class="keyword">self</span>)
+
+    <span class="comment">// Get color before handling tap</span>
+    <span class="keyword">let</span> color = gameState.<span class="call">getColorOfEntity</span>(entity)
+
+    <span class="comment">// Play sound</span>
+    <span class="call">playBalloonPopSound</span>()
+
+    <span class="comment">// Create explosion effect at current position</span>
+    <span class="call">createExplosionEffect</span>(at: entity, with: color, in: arView)
+
+    <span class="comment">// Temporarily store entity reference and remove it from parent to prevent GameState from finding it</span>
+    <span class="keyword">let</span> entityParent = entity.<span class="property">parent</span>
+    <span class="keyword">let</span> entityPosition = entity.<span class="property">position</span>
+    entity.<span class="call">removeFromParent</span>()
+
+    <span class="comment">// Re-add entity to parent so we can animate it</span>
+    entityParent?.<span class="call">addChild</span>(entity)
+    entity.<span class="property">position</span> = entityPosition
+
+    <span class="comment">// Update game state logic (score, level progression) but entity is already removed from GameState's tracking</span>
+    <span class="call">updateGameStateLogic</span>(for: entity)
+
+    <span class="comment">// Animate the sphere shrinking and then remove it manually</span>
+    <span class="call">animateSphereDissapear</span>(entity: entity) { [<span class="keyword">weak self</span>] <span class="keyword">in</span>
+        <span class="type">DispatchQueue</span>.<span class="property">main</span>.<span class="call">async</span> {
+            <span class="comment">// Manually remove the entity after animation</span>
+            entity.<span class="call">removeFromParent</span>()
+        }
+    }
+}
+</code></pre><p>Of course there could be further optimization of code usage and more of the code from the original version of the game could be used within the AR game, but that is something for future versions of the game. As it is now, this represents a solid base for several other games that I have in my queue, like scrabble type of game also for AR and VisionOS, customized for different languages.</p></div><span>Tagged with: </span><ul class="tag-list"><li><a href="/tags/swift">Swift</a></li><li><a href="/tags/swiftui">SwiftUI</a></li><li><a href="/tags/ios">iOS</a></li><li><a href="/tags/agmented-reality">Agmented Reality</a></li><li><a href="/tags/game-development">Game Development</a></li></ul></article></div><footer><p>Generated using <a href="https://github.com/johnsundell/publish">Publish</a></p><p><a href="/feed.rss">RSS feed</a></p></footer></body></html>
